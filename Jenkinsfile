@@ -21,7 +21,7 @@ pipeline {
 
         stage('Archive Artifact') {
             steps {
-                archiveArtifacts artifacts: 'target/devopsmavenapp-1.0-SNAPSHOT/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'target/devopsmavenapp-1.0-SNAPSHOT.jar', fingerprint: true
 
             }
         }
