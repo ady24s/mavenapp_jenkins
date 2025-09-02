@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>DevOps Maven App</name>
-    <description>A sample Maven application for DevOps pipeline</description>
+    <description>Simple Maven application for Jenkins distributed pipeline demo</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -27,26 +27,11 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- Optional: Add some commonly used libraries -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.13.0</version>
-        </dependency>
-
-        <!-- Removed problematic CloudSim dependency -->
-        <!-- If you need CloudSim, use this alternative:
-        <dependency>
-            <groupId>org.cloudbus</groupId>
-            <artifactId>cloudsim</artifactId>
-            <version>4.0.0</version>
-        </dependency>
-        -->
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -57,18 +42,14 @@
                 </configuration>
             </plugin>
 
+            <!-- Test Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
-                <configuration>
-                    <includes>
-                        <include>**/*Test.java</include>
-                        <include>**/*Tests.java</include>
-                    </includes>
-                </configuration>
             </plugin>
 
+            <!-- JAR Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -77,19 +58,11 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>com.devops.mav.App</mainClass>
+                            <mainClass>com.devops.mav.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
-    <!-- Repositories section if you need specific repos -->
-    <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo1.maven.org/maven2</url>
-        </repository>
-    </repositories>
 </project>
