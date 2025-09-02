@@ -1,30 +1,39 @@
 pipeline {
-    agent any
+    agent none  // Master won't run any stage
 
     tools {
-        maven 'Maven 3.9.9'  // Make sure this matches the name in Jenkins Global Tools
-        jdk 'jdk21'        // Same for this — must match your configured JDK in Jenkins
+        maven 'Maven 3.9.9'
+        jdk 'jdk21'
     }
 
     stages {
         stage('Checkout') {
+            agent { label 'build-node' } // slave1
             steps {
                 git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
             }
         }
 
         stage('Build') {
+            agent { label 'build-node' } // slave1
             steps {
-                bat 'mvn clean install'
+                bat 'mvn clean compile'
             }
         }
 
-        stage('Archive Artifact') {
+        stage('Test') {
+            agent { label 'test-node' } // slave2
             steps {
-                archiveArtifacts artifacts: 'target/devopsmavenapp-1.0-SNAPSHOT.jar', fingerprint: true
+                bat 'mvn test'
+            }
+        }
 
+        stage('Package & Archive') {
+            agent { label 'build-node' } // slave1
+            steps {
+                bat 'mvn package'
+                archiveArtifacts artifacts: 'target/devopsmavenapp-1.0-SNAPSHOT.jar', fingerprint: true
             }
         }
     }
 }
-//hellooo
