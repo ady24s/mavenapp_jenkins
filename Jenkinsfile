@@ -1,5 +1,5 @@
 pipeline {
-    agent none  // Master won't run any stage
+    agent none  // Master won't run stages
 
     tools {
         maven 'Maven 3.9.9'
@@ -12,13 +12,11 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            agent any  // Use any available node
-            // Alternative: agent { label 'built-in' }  // Use master node
+            agent { label 'slave' }  // Run on your slave node
             steps {
                 echo "Checking out code on node: ${env.NODE_NAME}"
                 git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
                 
-                // Store workspace info for other stages
                 script {
                     env.WORKSPACE_PATH = pwd()
                 }
@@ -31,26 +29,10 @@ pipeline {
         }
 
         stage('Build') {
-            agent any  // Use any available node
-            // Alternative: agent { label 'built-in' }
+            agent { label 'slave' }
             steps {
                 echo "Building on node: ${env.NODE_NAME}"
-                
-                // Re-checkout if workspace is clean (safety measure)
-                script {
-                    if (!fileExists('pom.xml')) {
-                        git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
-                    }
-                }
-                
-                // Use sh instead of bat for Linux nodes, bat for Windows
-                script {
-                    if (isUnix()) {
-                        sh 'mvn clean compile'
-                    } else {
-                        bat 'mvn clean compile'
-                    }
-                }
+                sh 'mvn clean compile'
             }
             post {
                 success {
@@ -63,26 +45,15 @@ pipeline {
         }
 
         stage('Test') {
-            agent any  // Use any available node
-            // For true distribution, set up another node and use its label
+            agent { label 'slave' }
             steps {
                 echo "Testing on node: ${env.NODE_NAME}"
-                
-                // Checkout code on test node
-                git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
-                
-                script {
-                    if (isUnix()) {
-                        sh 'mvn test'
-                    } else {
-                        bat 'mvn test'
-                    }
-                }
+                sh 'mvn test'
             }
             post {
                 always {
-                    // Archive test results regardless of outcome
-                    publishTestResults testResultsPattern: 'target/surefire-reports/*.xml'
+                    // Use junit instead of publishTestResults
+                    junit 'target/surefire-reports/*.xml'
                 }
                 success {
                     echo "Tests passed on ${env.NODE_NAME}"
@@ -94,31 +65,10 @@ pipeline {
         }
 
         stage('Package & Archive') {
-            agent any  // Use any available node
+            agent { label 'slave' }
             steps {
                 echo "Packaging on node: ${env.NODE_NAME}"
-                
-                // Ensure we have the built code
-                script {
-                    if (!fileExists('target/classes')) {
-                        git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
-                        if (isUnix()) {
-                            sh 'mvn clean compile'
-                        } else {
-                            bat 'mvn clean compile'
-                        }
-                    }
-                }
-                
-                script {
-                    if (isUnix()) {
-                        sh 'mvn package -DskipTests'
-                    } else {
-                        bat 'mvn package -DskipTests'
-                    }
-                }
-                
-                // Archive artifacts
+                sh 'mvn package -DskipTests'
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: true
             }
             post {
