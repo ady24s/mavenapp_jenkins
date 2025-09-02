@@ -12,9 +12,8 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            agent { 
-                label 'slave1'  // Use actual node labels configured in Jenkins
-            }
+            agent any  // Use any available node
+            // Alternative: agent { label 'built-in' }  // Use master node
             steps {
                 echo "Checking out code on node: ${env.NODE_NAME}"
                 git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
@@ -32,9 +31,8 @@ pipeline {
         }
 
         stage('Build') {
-            agent { 
-                label 'slave1'  // Same node as checkout to reuse workspace
-            }
+            agent any  // Use any available node
+            // Alternative: agent { label 'built-in' }
             steps {
                 echo "Building on node: ${env.NODE_NAME}"
                 
@@ -65,9 +63,8 @@ pipeline {
         }
 
         stage('Test') {
-            agent { 
-                label 'slave2'  // Different node for testing
-            }
+            agent any  // Use any available node
+            // For true distribution, set up another node and use its label
             steps {
                 echo "Testing on node: ${env.NODE_NAME}"
                 
@@ -97,9 +94,7 @@ pipeline {
         }
 
         stage('Package & Archive') {
-            agent { 
-                label 'slave1'  // Back to build node
-            }
+            agent any  // Use any available node
             steps {
                 echo "Packaging on node: ${env.NODE_NAME}"
                 
