@@ -1,5 +1,5 @@
 pipeline {
-    agent none  // Master won't run stages
+    agent none  // Master won't run any stage
 
     tools {
         maven 'Maven 3.9.9'
@@ -12,11 +12,11 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            agent { label 'slave' }  // Run on your slave node
+            agent any
             steps {
                 echo "Checking out code on node: ${env.NODE_NAME}"
                 git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
-                
+
                 script {
                     env.WORKSPACE_PATH = pwd()
                 }
@@ -29,10 +29,23 @@ pipeline {
         }
 
         stage('Build') {
-            agent { label 'slave' }
+            agent any
             steps {
                 echo "Building on node: ${env.NODE_NAME}"
-                sh 'mvn clean compile'
+                
+                script {
+                    if (!fileExists('pom.xml')) {
+                        git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
+                    }
+                }
+                
+                script {
+                    if (isUnix()) {
+                        sh 'mvn clean compile'
+                    } else {
+                        bat 'mvn clean compile'
+                    }
+                }
             }
             post {
                 success {
@@ -45,15 +58,24 @@ pipeline {
         }
 
         stage('Test') {
-            agent { label 'slave' }
+            agent any
             steps {
                 echo "Testing on node: ${env.NODE_NAME}"
-                sh 'mvn test'
+                
+                git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
+                
+                script {
+                    if (isUnix()) {
+                        sh 'mvn test'
+                    } else {
+                        bat 'mvn test'
+                    }
+                }
             }
             post {
                 always {
-                    // Use junit instead of publishTestResults
-                    junit 'target/surefire-reports/*.xml'
+                    // Archive JUnit test results
+                    junit '**/target/surefire-reports/*.xml'
                 }
                 success {
                     echo "Tests passed on ${env.NODE_NAME}"
@@ -65,10 +87,29 @@ pipeline {
         }
 
         stage('Package & Archive') {
-            agent { label 'slave' }
+            agent any
             steps {
                 echo "Packaging on node: ${env.NODE_NAME}"
-                sh 'mvn package -DskipTests'
+                
+                script {
+                    if (!fileExists('target/classes')) {
+                        git branch: 'master', url: 'https://github.com/ady24s/mavenapp_jenkins.git'
+                        if (isUnix()) {
+                            sh 'mvn clean compile'
+                        } else {
+                            bat 'mvn clean compile'
+                        }
+                    }
+                }
+                
+                script {
+                    if (isUnix()) {
+                        sh 'mvn package -DskipTests'
+                    } else {
+                        bat 'mvn package -DskipTests'
+                    }
+                }
+                
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: true
             }
             post {
